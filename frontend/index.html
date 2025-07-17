@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Live Location and Camera Access</title>
+  <style>
+    video, canvas {
+      display: block;
+      margin-bottom: 10px;
+    }
+    #map {
+      height: 300px;
+      width: 100%;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2>📍 User Location, Distance & Camera Snapshot</h2>
+
+  <video id="video" autoplay playsinline width="320" height="240"></video>
+  <canvas id="snapshot" width="320" height="240"></canvas>
+  <p id="location">📍 Getting location...</p>
+  <p id="distance">📏 Calculating distance...</p>
+  <div id="map"></div>
+
+  <script>
+    const myLat = 28.610001; // आपकी current location (जैसे New Delhi)
+    const myLon = 77.230003;
+
+    // 📍 1. Location Access
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      const { latitude, longitude } = pos.coords;
+      document.getElementById("location").textContent = `📍 Latitude: ${latitude}, Longitude: ${longitude}`;
+
+      // Google Map Init
+      const map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: latitude, lng: longitude },
+        zoom: 12,
+      });
+      new google.maps.Marker({ position: { lat: latitude, lng: longitude }, map: map });
+
+      // 📏 Distance Calculation
+      const distance = calcDistance(myLat, myLon, latitude, longitude);
+      document.getElementById("distance").textContent = `📏 Distance from you: ${distance.toFixed(2)} km`;
+    }, () => {
+      document.getElementById("location").textContent = "❌ Location access denied";
+    });
+
+    // 📷 2. Camera Access
+    const video = document.getElementById("video");
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then((stream) => {
+        video.srcObject = stream;
+        setTimeout(() => capturePhoto(video), 3000); // 3 सेकंड बाद ऑटो फोटो
+      })
+      .catch((err) => alert("❌ Camera error: " + err.message));
+
+    function capturePhoto(video) {
+      const canvas = document.getElementById("snapshot");
+      canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+    }
+
+    // 🌍 3. Haversine Formula to calculate distance
+    function calcDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180)
+              * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+      return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+    }
+  </script>
+
+  <!-- 🗺️ Google Map JS API (Add your own API key) -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY"></script>
+</body>
+</html>
